@@ -10,6 +10,7 @@
     "skipLibCheck": true,
     "lib": [
       "es2021",
+      "DOM"
     ],
     "outDir": "lib",
     "importHelpers": false,

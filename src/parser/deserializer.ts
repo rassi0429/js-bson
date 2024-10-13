@@ -238,6 +238,8 @@ function deserializeObject(
     // Represents the key
     const name = isArray ? arrayIndex++ : ByteUtils.toUTF8(buffer, index, i);
 
+    console.log('name:', name);
+
     // shouldValidateKey is true if the key should be validated, false otherwise
     let shouldValidateKey = true;
     if (globalUTFValidation || utf8KeysSet.has(name)) {
@@ -252,6 +254,8 @@ function deserializeObject(
     let value;
 
     index = i + 1;
+
+    console.log('elementType:', elementType);
 
     if (elementType === constants.BSON_DATA_STRING) {
       const stringSize =
@@ -288,6 +292,18 @@ function deserializeObject(
       index = index + 8;
     } else if (elementType === constants.BSON_DATA_NUMBER) {
       value = dataview.getFloat64(index, true);
+      if (isNaN(value)) {
+        // index = index + stringSize;
+        value = "NaN";
+      }
+      if (value === Infinity) {
+        // index = index + stringSize;
+        value = "Infinity";
+      }
+      if (value === -Infinity) {
+        // index = index + stringSize;
+        value = "-Infinity";
+      }
       index = index + 8;
     } else if (elementType === constants.BSON_DATA_DATE) {
       const lowBits =
