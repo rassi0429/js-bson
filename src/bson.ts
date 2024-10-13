@@ -62,7 +62,7 @@ export interface Document {
 
 /** @internal */
 // Default Max Size
-const MAXSIZE = 1024 * 1024 * 17;
+const MAXSIZE = 1024 * 1024 * 128;
 
 // Current Internal Temporary Serialization Buffer
 let buffer = ByteUtils.allocate(MAXSIZE);
