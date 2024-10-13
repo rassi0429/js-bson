@@ -238,7 +238,7 @@ function deserializeObject(
     // Represents the key
     const name = isArray ? arrayIndex++ : ByteUtils.toUTF8(buffer, index, i);
 
-    console.log('name:', name);
+    // console.log('name:', name);
 
     // shouldValidateKey is true if the key should be validated, false otherwise
     let shouldValidateKey = true;
@@ -255,7 +255,7 @@ function deserializeObject(
 
     index = i + 1;
 
-    console.log('elementType:', elementType);
+    // console.log('elementType:', elementType);
 
     if (elementType === constants.BSON_DATA_STRING) {
       const stringSize =

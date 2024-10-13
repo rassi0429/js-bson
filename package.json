@@ -1,5 +1,5 @@
 {
-  "name": "bson",
+  "name": "bson-fork",
   "description": "A bson parser for node.js and the browser",
   "keywords": [
     "mongodb",
@@ -14,14 +14,13 @@
     "vendor"
   ],
   "types": "bson.d.ts",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "author": {
-    "name": "The MongoDB NodeJS Team",
-    "email": "dbx-node@mongodb.com"
+    "name": "The MongoDB NodeJS Team fork by rassi0429"
   },
   "license": "Apache-2.0",
   "contributors": [],
-  "repository": "mongodb/js-bson",
+  "repository": "rassi0429/js-bson",
   "bugs": {
     "url": "https://jira.mongodb.org/projects/NODE/issues/"
   },
