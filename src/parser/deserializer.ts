@@ -294,15 +294,15 @@ function deserializeObject(
       value = dataview.getFloat64(index, true);
       if (isNaN(value)) {
         // index = index + stringSize;
-        value = "NaN";
+        value = 'NaN';
       }
       if (value === Infinity) {
         // index = index + stringSize;
-        value = "Infinity";
+        value = 'Infinity';
       }
       if (value === -Infinity) {
         // index = index + stringSize;
-        value = "-Infinity";
+        value = '-Infinity';
       }
       index = index + 8;
     } else if (elementType === constants.BSON_DATA_DATE) {

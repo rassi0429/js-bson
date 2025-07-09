@@ -38,7 +38,13 @@ const EXPECTED_EXPORTS = [
   'BSON'
 ];
 
-const EXPECTED_EJSON_EXPORTS = ['parse', 'stringify', 'serialize', 'deserialize'];
+const EXPECTED_EJSON_EXPORTS = [
+  'parse',
+  'stringify',
+  'serialize',
+  'deserialize',
+  'stringifyStream'
+];
 
 describe('bson entrypoint', () => {
   it('should export all and only the expected keys in expected_exports', () => {

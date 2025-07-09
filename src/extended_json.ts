@@ -500,15 +500,193 @@ function EJSONdeserialize(ejson: Document, options?: EJSONOptions): any {
   return parse(JSON.stringify(ejson), options);
 }
 
+/**
+ * Converts a BSON document to an Extended JSON string stream, optionally replacing values if a replacer
+ * function is specified or optionally including only the specified properties if a replacer array
+ * is specified. This function is designed to handle large objects that would exceed V8's string length limit.
+ *
+ * @param value - The value to convert to extended JSON
+ * @param replacer - A function that alters the behavior of the stringification process, or an array of String and Number objects that serve as a whitelist for selecting/filtering the properties of the value object to be included in the JSON string
+ * @param space - A String or Number object that's used to insert white space into the output JSON string for readability purposes
+ * @param options - Optional settings
+ * @returns An async generator that yields chunks of the stringified JSON
+ *
+ * @example
+ * ```js
+ * const { EJSON } = require('bson');
+ * const largeDoc = { // very large document };
+ *
+ * async function writeToStream() {
+ *   for await (const chunk of EJSON.stringifyStream(largeDoc)) {
+ *     process.stdout.write(chunk);
+ *   }
+ * }
+ * ```
+ */
+async function* stringifyStream(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  replacer?: (number | string)[] | ((this: any, key: string, value: any) => any) | EJSONOptions,
+  space?: string | number,
+  options?: EJSONOptions
+): AsyncGenerator<string, void, unknown> {
+  if (space != null && typeof space === 'object') {
+    options = space;
+    space = 0;
+  }
+  if (replacer != null && typeof replacer === 'object' && !Array.isArray(replacer)) {
+    options = replacer;
+    replacer = undefined;
+    space = 0;
+  }
+  const serializeOptions = Object.assign({ relaxed: true, legacy: false }, options, {
+    seenObjects: [{ propertyName: '(root)', obj: null }]
+  });
+
+  const doc = serializeValue(value, serializeOptions);
+
+  // Stream the JSON string generation
+  yield* streamJSON(doc, replacer as any, space);
+}
+
+/**
+ * Helper function to stream JSON stringification
+ * @internal
+ */
+async function* streamJSON(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  replacer?: (this: any, key: string, value: any) => any | (string | number)[],
+  space?: string | number
+): AsyncGenerator<string, void, unknown> {
+  const seen = new WeakSet();
+  const indent = typeof space === 'string' ? space : space ? ' '.repeat(space) : '';
+  let currentIndent = '';
+
+  async function* stringifyValue(val: any, key?: string): AsyncGenerator<string, void, unknown> {
+    // Handle replacer function
+    if (replacer && typeof replacer === 'function') {
+      val = replacer.call(val, key || '', val);
+    }
+
+    // Skip undefined values returned by replacer function
+    if (val === undefined) {
+      return;
+    }
+
+    // Handle replacer array
+    if (replacer && Array.isArray(replacer) && key && !replacer.includes(key)) {
+      return;
+    }
+
+    if (val === null) {
+      yield 'null';
+    } else if (typeof val === 'boolean') {
+      yield val.toString();
+    } else if (typeof val === 'number') {
+      yield JSON.stringify(val);
+    } else if (typeof val === 'string') {
+      yield JSON.stringify(val);
+    } else if (typeof val === 'object') {
+      // Check for circular references
+      if (seen.has(val)) {
+        throw new TypeError('Converting circular structure to JSON');
+      }
+      seen.add(val);
+
+      try {
+        if (Array.isArray(val)) {
+          yield '[';
+          if (indent) {
+            currentIndent += indent;
+          }
+
+          for (let i = 0; i < val.length; i++) {
+            if (i > 0) yield ',';
+            if (indent) {
+              yield '\n' + currentIndent;
+            }
+            yield* stringifyValue(val[i]);
+          }
+
+          if (indent && val.length > 0) {
+            currentIndent = currentIndent.slice(0, -indent.length);
+            yield '\n' + currentIndent;
+          }
+          yield ']';
+        } else {
+          yield '{';
+          if (indent) {
+            currentIndent += indent;
+          }
+
+          const keys = Object.keys(val);
+          let first = true;
+
+          for (const k of keys) {
+            // Skip undefined values
+            if (val[k] === undefined) continue;
+
+            // Handle replacer array
+            if (replacer && Array.isArray(replacer) && !replacer.includes(k)) {
+              continue;
+            }
+
+            // Process the value through stringifyValue which will handle replacer function
+            // Capture whether the value gets filtered out
+            let hasValue = false;
+            const valueChunks: string[] = [];
+            for await (const chunk of stringifyValue(val[k], k)) {
+              hasValue = true;
+              valueChunks.push(chunk);
+            }
+
+            // Only output if value wasn't filtered out
+            if (hasValue) {
+              if (!first) yield ',';
+              first = false;
+
+              if (indent) {
+                yield '\n' + currentIndent;
+              }
+              yield JSON.stringify(k) + ':';
+              if (indent) yield ' ';
+              for (const chunk of valueChunks) {
+                yield chunk;
+              }
+            }
+          }
+
+          if (indent && !first) {
+            currentIndent = currentIndent.slice(0, -indent.length);
+            yield '\n' + currentIndent;
+          }
+          yield '}';
+        }
+      } finally {
+        seen.delete(val);
+      }
+    } else {
+      yield JSON.stringify(val);
+    }
+  }
+
+  yield* stringifyValue(value);
+}
+
 /** @public */
 const EJSON: {
   parse: typeof parse;
   stringify: typeof stringify;
+  stringifyStream: typeof stringifyStream;
   serialize: typeof EJSONserialize;
   deserialize: typeof EJSONdeserialize;
 } = Object.create(null);
 EJSON.parse = parse;
 EJSON.stringify = stringify;
+EJSON.stringifyStream = stringifyStream;
 EJSON.serialize = EJSONserialize;
 EJSON.deserialize = EJSONdeserialize;
 Object.freeze(EJSON);
