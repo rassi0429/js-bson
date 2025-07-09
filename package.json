@@ -9,12 +9,12 @@
   "files": [
     "lib",
     "src",
-    "bson.d.ts",
+    "bson-fork.d.ts",
     "etc/prepare.js",
     "vendor"
   ],
-  "types": "bson.d.ts",
-  "version": "6.1.2",
+  "types": "bson-fork.d.ts",
+  "version": "6.1.5",
   "author": {
     "name": "The MongoDB NodeJS Team fork by rassi0429"
   },

@@ -1,5 +1,5 @@
 {
-  "entryPoint": "./bson.d.ts",
+  "entryPoint": "./bson-fork.d.ts",
   "mode": "file",
   "out": "docs/public",
   "excludeNotExported": true,
